@@ -52,6 +52,7 @@
   .btn.dark{background:var(--accent);color:#fff}
   .info p,.info li{font-size:15px;line-height:1.5;color:#4b3a28}
   .info ul{padding-left:20px;margin:6px 0}
+  input[type=range]{width:100%;height:36px;accent-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -71,6 +72,15 @@
         <input type="number" id="loaves" inputmode="numeric" min="1" value="1">
         <button type="button" id="plus" aria-label="more">+</button>
       </div>
+
+      <label for="size">Loaf size: <span id="sizeV">100%</span>
+        <span class="hint">Slide left for a smaller loaf. Every ingredient shrinks together, so the dough stays the same.</span></label>
+      <input type="range" id="size" min="50" max="110" step="5" value="100">
+      <div class="note" id="sizeInfo"></div>
+
+      <label for="stick">Extra for dough that sticks to bowls: <span id="stickV">3%</span>
+        <span class="hint">Some dough stays on the bowl and tools. This adds a little extra so your loaf still hits its size.</span></label>
+      <input type="range" id="stick" min="0" max="10" step="1" value="3">
 
       <label for="have">Starter you have right now (grams)
         <span class="hint">Weigh your jar of active starter. Put 0 if you have none.</span></label>
@@ -246,16 +256,25 @@ function calcBake(){
   const loaves = Math.max(1, Math.floor(num($("loaves"), 1)));
   const have = num($("have"), 0);
   const peak = num($("sPeak"), 7) || 7;
+  const size = num($("size"), 100) / 100, stick = num($("stick"), 3) / 100;
+  $("sizeV").textContent = Math.round(size * 100) + "%";
+  $("stickV").textContent = Math.round(stick * 100) + "%";
+  const mult = loaves * size * (1 + stick);
+  const amt = g => { const v = g * mult; return v < 20 ? r10(v) : r1(v); };
+
+  const per = Object.values(rec).reduce((a, b) => a + b, 0) * size;
+  const f = rec.Flour || 0, w = rec.Water || 0, st = rec.Starter || 0;
+  const hy = f > 0 ? (w + st / 2) / (f + st / 2) * 100 : 70;
+  const loss = Math.min(0.18, Math.max(0.10, (12 + (hy - 65) * 0.3) / 100));
+  $("sizeInfo").innerHTML = `Dough per loaf: <b>${r1(per)} g</b><br>Baked loaf: about <b>${r1(per * (1 - loss))} g</b> (${Math.round(loss * 100)}% lost in the oven)`;
 
   let html = "";
   for (const [k, g] of Object.entries(rec))
-    html += row(k === "Starter" ? "Starter (in the dough)" : k, r1(g * loaves));
-  const per = Object.values(rec).reduce((a, b) => a + b, 0);
-  html += row("Each loaf weighs about", r1(per));
-  html += row("Total dough", r1(per * loaves));
+    html += row(k === "Starter" ? "Starter (in the dough)" : k, amt(g));
+  html += row("Total to weigh out", r1(per * loaves * (1 + stick)));
   $("dough").innerHTML = html;
 
-  const need = (rec.Starter || 0) * loaves;
+  const need = (rec.Starter || 0) * mult;
   let s = row("Starter needed", r1(need));
   if (have >= need) {
     s += `<div class="badge good">You have enough. No feeding needed.</div>`;
@@ -385,7 +404,7 @@ function calcAll(rebuild){
   if (rebuild) { fillFlavors(); renderRecipeFields(); }
   calcBake(); calcSched(); calcHyd(); renderHyd();
 }
-["flavor", "loaves", "have"].forEach(id => { $(id).addEventListener("input", () => { state.inputs[id] = $(id).value; save(); calcBake(); }); $(id).addEventListener("change", () => { state.inputs[id] = $(id).value; save(); calcBake(); }); });
+["flavor", "loaves", "have", "size", "stick"].forEach(id => { $(id).addEventListener("input", () => { state.inputs[id] = $(id).value; save(); calcBake(); }); $(id).addEventListener("change", () => { state.inputs[id] = $(id).value; save(); calcBake(); }); });
 $("minus").onclick = () => { $("loaves").value = Math.max(1, num($("loaves"), 1) - 1); $("loaves").dispatchEvent(new Event("input")); };
 $("plus").onclick = () => { $("loaves").value = num($("loaves"), 1) + 1; $("loaves").dispatchEvent(new Event("input")); };
 ["hf", "hw"].forEach(id => $(id).addEventListener("input", calcHyd));
