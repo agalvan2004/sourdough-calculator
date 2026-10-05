@@ -4,138 +4,259 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sourdough">
 <meta name="theme-color" content="#8a5a2b">
 <title>Sourdough Calculator</title>
 <style>
   :root{--bg:#fbf5ea;--card:#fff;--ink:#3b2a1a;--accent:#8a5a2b;--soft:#f1e4cd;--ok:#2f7d4f;--warn:#b3541e}
   *{box-sizing:border-box}
-  body{margin:0;font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:16px env(safe-area-inset-right) 40px env(safe-area-inset-left)}
+  body{margin:0;font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:16px env(safe-area-inset-right) 90px env(safe-area-inset-left)}
   .wrap{max-width:480px;margin:0 auto;padding:0 14px}
   h1{font-size:24px;margin:8px 0 2px}
   .sub{color:#7a6650;margin:0 0 16px;font-size:15px}
   .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(60,40,10,.10)}
-  label{display:block;font-weight:600;margin:12px 0 6px;font-size:16px}
-  label:first-child{margin-top:0}
+  label{display:block;font-weight:600;margin:14px 0 6px;font-size:16px}
+  .card>label:first-child{margin-top:0}
   .hint{font-weight:400;color:#8b7860;font-size:13px;display:block;margin-top:2px}
-  select,input[type=number]{width:100%;font-size:20px;padding:12px;border:2px solid var(--soft);border-radius:12px;background:#fffdf8;color:var(--ink)}
+  select,input[type=number],input[type=datetime-local],input[type=text]{width:100%;font-size:19px;padding:12px;border:2px solid var(--soft);border-radius:12px;background:#fffdf8;color:var(--ink);font-family:inherit}
   select:focus,input:focus{outline:none;border-color:var(--accent)}
   .stepper{display:flex;gap:10px;align-items:center}
   .stepper button{flex:0 0 56px;height:56px;font-size:28px;border:none;border-radius:12px;background:var(--accent);color:#fff}
   .stepper input{text-align:center;font-weight:700;font-size:26px}
   h2{font-size:18px;margin:0 0 10px;color:var(--accent)}
-  .row{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--soft);font-size:17px}
+  .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 0;border-bottom:1px solid var(--soft);font-size:17px}
   .row:last-child{border-bottom:none}
-  .row b{font-size:22px}
+  .row b{font-size:21px;text-align:right}
   .badge{display:inline-block;padding:8px 12px;border-radius:10px;font-weight:700;margin-bottom:8px}
   .good{background:#e3f4ea;color:var(--ok)}
   .bad{background:#fbe9de;color:var(--warn)}
-  .note{font-size:14px;color:#7a6650;margin-top:8px;line-height:1.4}
+  .note{font-size:14px;color:#7a6650;margin-top:8px;line-height:1.45}
   details{margin-top:6px}
-  summary{font-size:15px;color:var(--accent);font-weight:600;padding:6px 0}
+  summary{font-size:16px;color:var(--accent);font-weight:600;padding:8px 0}
+  .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:#fff;border-top:1px solid var(--soft);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+  .tabs button{flex:1;border:none;background:none;padding:12px 2px 10px;font-size:13px;color:#8b7860;font-weight:600}
+  .tabs button span{display:block;font-size:22px}
+  .tabs button.on{color:var(--accent)}
+  .tab{display:none}.tab.on{display:block}
+  .tl{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--soft)}
+  .tl:last-child{border-bottom:none}
+  .tl .t{flex:0 0 112px;font-weight:700;font-size:15px}
+  .tl .t small{display:block;font-weight:400;color:#8b7860}
+  .tl .w{font-size:16px}
+  .tl.key .w{font-weight:700;color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .ing{display:flex;align-items:center;gap:10px;margin:6px 0}
+  .ing span{flex:1;font-size:17px}
+  .ing input{width:110px;text-align:right}
+  .btn{display:block;width:100%;padding:12px;border:none;border-radius:12px;background:var(--soft);color:var(--accent);font-weight:700;font-size:16px;margin-top:10px}
+  .btn.dark{background:var(--accent);color:#fff}
+  .info p,.info li{font-size:15px;line-height:1.5;color:#4b3a28}
+  .info ul{padding-left:20px;margin:6px 0}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Sourdough Calculator</h1>
-  <p class="sub">Pick a flavor, enter how many loaves, and get your numbers.</p>
+  <p class="sub">Tap the tabs at the bottom. Everything you type is saved on this phone.</p>
 
-  <div class="card">
-    <label for="flavor">Which flavor?</label>
-    <select id="flavor"></select>
+  <!-- BAKE -->
+  <div class="tab on" id="tab-bake">
+    <div class="card">
+      <label for="flavor">Which flavor?</label>
+      <select id="flavor"></select>
 
-    <label>How many loaves?</label>
-    <div class="stepper">
-      <button type="button" id="minus" aria-label="fewer">&minus;</button>
-      <input type="number" id="loaves" inputmode="numeric" min="1" value="2">
-      <button type="button" id="plus" aria-label="more">+</button>
+      <label>How many loaves?</label>
+      <div class="stepper">
+        <button type="button" id="minus" aria-label="fewer">&minus;</button>
+        <input type="number" id="loaves" inputmode="numeric" min="1" value="1">
+        <button type="button" id="plus" aria-label="more">+</button>
+      </div>
+
+      <label for="have">Starter you have right now (grams)
+        <span class="hint">Weigh your jar of active starter. Put 0 if you have none.</span></label>
+      <input type="number" id="have" inputmode="decimal" min="0" value="50">
     </div>
 
-    <label for="have">Starter you have right now (grams)
-      <span class="hint">Weigh your jar of active starter. Put 0 if you have none.</span></label>
-    <input type="number" id="have" inputmode="decimal" min="0" value="50">
+    <div class="card"><h2>Your dough recipe</h2><div id="dough"></div></div>
+    <div class="card"><h2>Your starter</h2><div id="starter"></div></div>
   </div>
 
-  <div class="card">
-    <h2>Your dough recipe</h2>
-    <div id="dough"></div>
+  <!-- SCHEDULE -->
+  <div class="tab" id="tab-sched">
+    <div class="card">
+      <h2>Plan your bake</h2>
+      <label for="sFed">When do you feed your starter?</label>
+      <input type="datetime-local" id="sFed">
+      <label for="sPeak">Hours for your starter to peak
+        <span class="hint">Usually 4 to 8 hours. Watch your jar, it should be doubled and domed.</span></label>
+      <input type="number" id="sPeak" inputmode="decimal" min="1" value="7">
+
+      <label for="sMix">When do you mix the dough?
+        <span class="hint">Starts as the time your starter is ready. Change it if you want.</span></label>
+      <input type="datetime-local" id="sMix">
+
+      <div class="grid2">
+        <div><label for="sFolds">Stretch &amp; folds</label>
+          <input type="number" id="sFolds" inputmode="numeric" min="0" value="4"></div>
+        <div><label for="sGap">Minutes apart</label>
+          <input type="number" id="sGap" inputmode="numeric" min="5" value="30"></div>
+      </div>
+
+      <label for="sBulk">Extra rest after the last fold (hours)
+        <span class="hint">Dough rises on the counter until it's puffy and jiggly. Then you shape it.</span></label>
+      <input type="number" id="sBulk" inputmode="decimal" min="0" value="3">
+
+      <label for="sCold">When does the cold proof start?
+        <span class="hint">When the shaped loaf goes in the fridge. Starts as the time shaping should be done.</span></label>
+      <input type="datetime-local" id="sCold">
+
+      <label for="sColdH">How long is the cold proof (hours)?</label>
+      <input type="number" id="sColdH" inputmode="decimal" min="1" value="12">
+      <button class="btn" id="sReset">Reset times to suggested</button>
+    </div>
+
+    <div class="card"><h2>Your bake-day timeline</h2><div id="timeline"></div><div id="schedWarn"></div></div>
   </div>
 
-  <div class="card">
-    <h2>Your starter</h2>
-    <div id="starter"></div>
+  <!-- MY NUMBERS -->
+  <div class="tab" id="tab-recipe">
+    <div class="card">
+      <h2>My recipe (grams per loaf)</h2>
+      <label for="rFlavor">Which recipe?</label>
+      <select id="rFlavor"></select>
+      <div id="rFields"></div>
+      <label>Add another ingredient
+        <span class="hint">Like seeds, honey or herbs. Name, then grams per loaf.</span></label>
+      <div class="ing"><input type="text" id="addName" placeholder="Ingredient" style="flex:1"><input type="number" id="addG" inputmode="decimal" placeholder="g"></div>
+      <button class="btn dark" id="addBtn">Add</button>
+      <button class="btn" id="rReset">Reset this recipe to the original</button>
+      <div class="note">Change any number and the whole app updates, including hydration.</div>
+    </div>
+    <div class="card"><h2>Hydration of this recipe</h2><div id="hyd"></div></div>
+    <div class="card">
+      <h2>Hydration calculator</h2>
+      <label for="hf">Flour (g)</label><input type="number" id="hf" inputmode="decimal" min="0" value="500">
+      <label for="hw">Water (g)</label><input type="number" id="hw" inputmode="decimal" min="0" value="320">
+      <div class="row"><span>Hydration</span><b id="hout">64%</b></div>
+    </div>
   </div>
 
-  <div class="card">
-    <h2>Hydration (what's that?)</h2>
-    <div id="hyd"></div>
-    <details open>
-      <summary>What it means</summary>
-      <div class="note">Hydration is how much water is in your dough compared to the flour, as a percent. Flour always counts as 100%.<br><br>
-      <b>Formula:</b> water &divide; flour &times; 100<br>
-      Example: 350 g water &divide; 500 g flour = 0.70, so <b>70% hydration</b>.<br><br>
-      <b>Counting the starter:</b> starter is half flour and half water (a 100% starter). Add half of it to the flour and half to the water, then do the same math. It nudges the number up a little.<br><br>
-      <b>What the numbers feel like:</b><br>
-      55-65%: stiff, easy to handle<br>
-      68-72%: great for beginners<br>
-      75-80%: sticky, bigger holes, harder to shape<br>
-      More water = stickier dough and a more open crumb.</div>
-    </details>
-    <details>
-      <summary>Try your own numbers</summary>
-      <label for="hf">Flour (g)</label>
-      <input type="number" id="hf" inputmode="decimal" min="0" value="500">
-      <label for="hw">Water (g)</label>
-      <input type="number" id="hw" inputmode="decimal" min="0" value="350">
-      <div class="row"><span>Hydration</span><b id="hout">70%</b></div>
-    </details>
-  </div>
-
-  <div class="card">
-    <details>
-      <summary>Settings</summary>
-      <label for="peak">Hours for your starter to peak after a feed
-        <span class="hint">Usually 6 to 8 hours. Used for the timing estimate.</span></label>
-      <input type="number" id="peak" inputmode="decimal" min="1" value="7">
-    </details>
+  <!-- LEARN -->
+  <div class="tab info" id="tab-learn">
+    <div class="card">
+      <h2>What is hydration?</h2>
+      <p>Hydration is how much water is in your dough compared to the flour, as a percent. Flour is always 100%.</p>
+      <p><b>Formula:</b> water &divide; flour &times; 100.<br>Example: 320 g water &divide; 500 g flour = 0.64, so <b>64% hydration</b>.</p>
+      <p><b>Counting the starter:</b> a normal starter is half flour, half water. Add half of the starter to the flour and half to the water, then do the same math. The "effective" hydration is a bit higher.</p>
+      <ul>
+        <li>55-65%: stiffer, easy to handle</li>
+        <li>68-72%: good for beginners</li>
+        <li>75-80%: sticky, bigger holes, harder to shape</li>
+      </ul>
+      <p>More water means stickier dough and a more open crumb.</p>
+    </div>
+    <div class="card">
+      <h2>Baker's percentages</h2>
+      <p>Bakers describe a recipe by comparing every ingredient to the flour. Flour is 100%.</p>
+      <p>Your loaf: 500 g flour = 100%, 320 g water = 64%, 125 g starter = 25%, 8 g salt = 1.6%.</p>
+      <p>This is why you can double or halve any recipe and keep the same dough. The My Numbers tab shows these for you.</p>
+    </div>
+    <div class="card">
+      <h2>Bake day guide</h2>
+      <details><summary>Stretch &amp; folds</summary>
+        <p>Wet your hand, grab one edge of the dough, stretch it up and fold it over the middle. Turn the bowl and repeat 3 or 4 times around. Do this every 30 minutes at the start. It builds strength without kneading.</p></details>
+      <details><summary>How do I know the dough is ready to shape?</summary>
+        <ul><li>It has grown about 1.5 to 2 times its size.</li>
+        <li>The top is domed and has some bubbles.</li>
+        <li>It jiggles when you shake the bowl.</li>
+        <li>Poke test: flour a finger and poke it. If the dent springs back slowly and not all the way, it's ready.</li></ul>
+        <p>Warm kitchens go faster. Cool kitchens take longer. Around 74 to 78&deg;F, bulk often takes about 3.5 to 4 hours total.</p></details>
+      <details><summary>Cold proof (the fridge rest)</summary>
+        <p>The shaped loaf rests in the fridge, usually 12 to 24 hours. Longer gives a tangier flavor. Past about 48 hours the dough can start to break down. The cold also makes the dough easier to score.</p></details>
+      <details><summary>Baking</summary>
+        <p>Use a preheated Dutch oven, about 5 to 6 quarts for a loaf this size. A common method is a hot start for about 20 minutes with the lid on to trap steam, then 20 to 25 minutes with the lid off at around 450&deg;F. Ovens differ, so go by color: deep golden brown.</p>
+        <p>Let the loaf cool completely before slicing. Cutting hot bread can make the inside gummy.</p></details>
+      <details><summary>Starter tips</summary>
+        <p>A healthy starter doubles in about 4 to 8 hours after a feed and has a domed top with bubbles. Use it at its peak. A 1:1:1 feed means equal weights of starter, flour and water.</p></details>
+    </div>
+    <div class="card">
+      <h2>Troubleshooting</h2>
+      <details><summary>Dense, tight crumb</summary>
+        <p>Usually under-fermented. Let the dough rise longer on the counter, and check that your starter is really active (doubled) before mixing.</p></details>
+      <details><summary>Flat loaf</summary>
+        <p>Often a weak starter, over-proofing or rushing the rise. Try the poke test: if the dent never springs back, it's over-proofed. If it springs back right away, it needs more time.</p></details>
+      <details><summary>Gummy inside</summary>
+        <p>Cut too soon while hot, or over-proofed. Cool the loaf fully.</p></details>
+      <details><summary>Weak oven spring</summary>
+        <p>Weak gluten, a weak starter or too little water. Make sure the stretch and folds are done and the dough is not stiff.</p></details>
+      <div class="note">These are general guidelines from common sourdough sources like King Arthur, The Perfect Loaf and Pantry Mama. Your kitchen and flour may change things, so trust your dough.</div>
+    </div>
   </div>
 </div>
 
+<div class="tabs">
+  <button data-tab="bake" class="on"><span>&#127838;</span>Bake</button>
+  <button data-tab="sched"><span>&#9200;</span>Schedule</button>
+  <button data-tab="recipe"><span>&#9878;</span>My Numbers</button>
+  <button data-tab="learn"><span>&#128214;</span>Learn</button>
+</div>
+
 <script>
-// grams for ONE loaf
-const RECIPES = {
-  "Regular OG":            {Starter:100, Water:350, Flour:500, Salt:10},
-  "Jalapeno Cheddar":      {Starter:100, Water:350, Flour:500, Salt:10, Jalapeno:50, Cheddar:120},
-  "Rosemary Cheddar":      {Starter:100, Water:350, Flour:500, Salt:10, Cheddar:110, Rosemary:7},
-  "Just Chocolate Chip":   {Starter:100, Water:350, Flour:500, Salt:10, "Choc Chips":160}
-};
 const $ = id => document.getElementById(id);
-const sel = $("flavor");
-Object.keys(RECIPES).forEach(n => sel.add(new Option(n, n)));
+const BASE = {Starter:125, Water:320, Flour:500, Salt:8};
+const DEFAULTS = {
+  "Regular OG":          {...BASE},
+  "Jalapeno Cheddar":    {...BASE, Jalapeno:50, Cheddar:120},
+  "Rosemary Cheddar":    {...BASE, Cheddar:110, Rosemary:7},
+  "Just Chocolate Chip": {...BASE, "Choc Chips":160}
+};
+const KEY = "sourdough-v2";
+let state = JSON.parse(localStorage.getItem(KEY) || "{}");
+state.recipes = state.recipes || JSON.parse(JSON.stringify(DEFAULTS));
+state.inputs = state.inputs || {};
+const save = () => localStorage.setItem(KEY, JSON.stringify(state));
+const R = () => state.recipes;
 
-const r1 = n => Math.round(n);
 const num = (el, d) => { const v = parseFloat(el.value); return isFinite(v) && v >= 0 ? v : d; };
+const r1 = n => Math.round(n);
+const r10 = n => Math.round(n * 10) / 10;
+const row = (l, v, u="g") => `<div class="row"><span>${l}</span><b>${v}${u ? " " + u : ""}</b></div>`;
 
-function row(label, val, unit="g"){ return `<div class="row"><span>${label}</span><b>${val}${unit?" "+unit:""}</b></div>`; }
+/* ---------- tabs ---------- */
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.id === "tab-" + b.dataset.tab));
+  window.scrollTo(0, 0);
+});
 
-function calc(){
-  const rec = RECIPES[sel.value];
+/* ---------- flavor selects ---------- */
+function fillFlavors(){
+  for (const id of ["flavor", "rFlavor"]) {
+    const el = $(id), cur = el.value;
+    el.innerHTML = "";
+    Object.keys(R()).forEach(n => el.add(new Option(n, n)));
+    if (cur && R()[cur]) el.value = cur;
+  }
+}
+
+/* ---------- BAKE tab ---------- */
+function calcBake(){
+  const rec = R()[$("flavor").value];
+  if (!rec) return;
   const loaves = Math.max(1, Math.floor(num($("loaves"), 1)));
   const have = num($("have"), 0);
-  const peak = num($("peak"), 7) || 7;
+  const peak = num($("sPeak"), 7) || 7;
 
   let html = "";
-  for (const [k, g] of Object.entries(rec)) {
-    const label = k === "Starter" ? "Starter (in the dough)" : k;
-    html += row(label, r1(g * loaves));
-  }
-  const per = Object.values(rec).reduce((a,b)=>a+b,0);
+  for (const [k, g] of Object.entries(rec))
+    html += row(k === "Starter" ? "Starter (in the dough)" : k, r1(g * loaves));
+  const per = Object.values(rec).reduce((a, b) => a + b, 0);
   html += row("Each loaf weighs about", r1(per));
   html += row("Total dough", r1(per * loaves));
   $("dough").innerHTML = html;
 
-  const need = rec.Starter * loaves;
-  let s = "";
-  s += row("Starter needed", r1(need));
+  const need = (rec.Starter || 0) * loaves;
+  let s = row("Starter needed", r1(need));
   if (have >= need) {
     s += `<div class="badge good">You have enough. No feeding needed.</div>`;
     s += `<div class="note">You'll have about ${r1(have - need)} g left over to keep going.</div>`;
@@ -143,35 +264,141 @@ function calc(){
     s += `<div class="badge bad">Enter how much starter you have.</div>`;
   } else {
     const feeds = Math.ceil(Math.log(need / have) / Math.log(3) - 1e-9);
-    const end = have * Math.pow(3, feeds);
     s += `<div class="badge bad">You need more. Short by ${r1(need - have)} g.</div>`;
     s += row("Feed right now: flour", r1(have));
     s += row("Feed right now: water", r1(have));
     s += row("Number of feeds", feeds, "");
-    s += row("Starter you'll end with", r1(end));
+    s += row("Starter you'll end with", r1(have * Math.pow(3, feeds)));
     s += row("Time until ready", r1(feeds * peak), "hours");
-    s += `<div class="note">Each feed is equal parts starter, flour, and water (1:1:1), which triples it. After each feed peaks, weigh it and feed again with equal flour and water. Once you've done all the feeds, mix your dough.</div>`;
+    s += `<div class="note">Each feed is equal parts starter, flour and water (1:1:1), which triples it. After each feed peaks, weigh it and feed again. Once all feeds are done, mix your dough.</div>`;
   }
   $("starter").innerHTML = s;
-
-  const flour = rec.Flour, water = rec.Water, st = rec.Starter;
-  const simple = water / flour * 100;
-  const withStarter = (water + st/2) / (flour + st/2) * 100;
-  $("hyd").innerHTML = row("This recipe's hydration", Math.round(simple*10)/10, "%")
-    + row("Counting the starter", Math.round(withStarter*10)/10, "%");
-  calcHyd();
 }
 
+/* ---------- MY NUMBERS tab ---------- */
+function renderRecipeFields(){
+  const name = $("rFlavor").value, rec = R()[name];
+  if (!rec) return;
+  $("rFields").innerHTML = Object.entries(rec).map(([k, g]) =>
+    `<div class="ing"><span>${k}</span><input type="number" inputmode="decimal" min="0" data-k="${k}" value="${g}"></div>`).join("");
+  $("rFields").querySelectorAll("input").forEach(i => i.oninput = () => {
+    rec[i.dataset.k] = Math.max(0, parseFloat(i.value) || 0);
+    save(); calcAll(false);
+  });
+  renderHyd();
+}
+function renderHyd(){
+  const rec = R()[$("rFlavor").value]; if (!rec) return;
+  const f = rec.Flour || 0, w = rec.Water || 0, st = rec.Starter || 0;
+  $("hyd").innerHTML = f > 0
+    ? row("Water ÷ flour", r10(w / f * 100), "%") + row("Counting the starter", r10((w + st / 2) / (f + st / 2) * 100), "%")
+      + row("Starter % of flour", r10(st / f * 100), "%") + row("Salt % of flour", r10((rec.Salt || 0) / f * 100), "%")
+    : `<div class="note">Enter a flour amount to see hydration.</div>`;
+}
 function calcHyd(){
   const f = parseFloat($("hf").value), w = parseFloat($("hw").value);
-  $("hout").textContent = (f > 0 && w >= 0) ? (Math.round(w / f * 1000)/10) + "%" : "-";
+  $("hout").textContent = (f > 0 && w >= 0) ? r10(w / f * 100) + "%" : "-";
+}
+$("rFlavor").onchange = renderRecipeFields;
+$("addBtn").onclick = () => {
+  const n = $("addName").value.trim(), g = parseFloat($("addG").value);
+  if (!n || !(g >= 0)) return;
+  R()[$("rFlavor").value][n] = g;
+  $("addName").value = ""; $("addG").value = "";
+  save(); renderRecipeFields(); calcAll(false);
+};
+$("rReset").onclick = () => {
+  const n = $("rFlavor").value;
+  if (!DEFAULTS[n]) return;
+  R()[n] = {...DEFAULTS[n]}; save(); renderRecipeFields(); calcAll(false);
+};
+
+/* ---------- SCHEDULE tab ---------- */
+const pad = n => String(n).padStart(2, "0");
+const toLocal = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const fromLocal = v => v ? new Date(v) : null;
+const addH = (d, h) => new Date(d.getTime() + h * 3600000);
+const addM = (d, m) => new Date(d.getTime() + m * 60000);
+const fmtDay = d => d.toLocaleDateString([], {weekday: "short", month: "short", day: "numeric"});
+const fmtTime = d => d.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
+const touched = {};
+
+function suggest(){
+  const peak = num($("sPeak"), 7) || 7;
+  const folds = Math.floor(num($("sFolds"), 0)), gap = num($("sGap"), 30), bulk = num($("sBulk"), 0);
+  const fed = fromLocal($("sFed").value);
+  if (fed && !touched.sMix) $("sMix").value = toLocal(addH(fed, peak));
+  const mix = fromLocal($("sMix").value);
+  if (mix && !touched.sCold) $("sCold").value = toLocal(addM(addH(addM(mix, folds * gap), bulk), 30));
 }
 
-$("minus").onclick = () => { $("loaves").value = Math.max(1, num($("loaves"),1) - 1); calc(); };
-$("plus").onclick  = () => { $("loaves").value = num($("loaves"),1) + 1; calc(); };
-["flavor","loaves","have","peak"].forEach(id => { $(id).addEventListener("input", calc); $(id).addEventListener("change", calc); });
-["hf","hw"].forEach(id => $(id).addEventListener("input", calcHyd));
-calc();
+function calcSched(){
+  suggest();
+  const peak = num($("sPeak"), 7) || 7;
+  const folds = Math.floor(num($("sFolds"), 0)), gap = num($("sGap"), 30), bulk = num($("sBulk"), 0);
+  const coldH = num($("sColdH"), 12) || 12;
+  const fed = fromLocal($("sFed").value), mix = fromLocal($("sMix").value), cold = fromLocal($("sCold").value);
+  const ev = [];
+  const warns = [];
+  if (fed) {
+    ev.push([fed, "Feed your starter", true]);
+    const ready = addH(fed, peak);
+    ev.push([ready, "Starter should be at its peak (doubled and domed)", false]);
+    if (mix && mix < ready) warns.push("You plan to mix before your starter peaks. Try mixing at " + fmtTime(ready) + " or later.");
+  }
+  let lastFold = null;
+  if (mix) {
+    ev.push([mix, "Mix the dough (flour, water, starter, salt)", true]);
+    for (let i = 1; i <= folds; i++) { lastFold = addM(mix, i * gap); ev.push([lastFold, `Stretch & fold ${i} of ${folds}`, false]); }
+    const bulkEnd = addH(lastFold || mix, bulk);
+    ev.push([bulkEnd, "Dough is puffy and jiggly. Shape the loaf", false]);
+    if (cold && cold < bulkEnd) warns.push("Your cold proof starts before the dough has finished rising on the counter (" + fmtTime(bulkEnd) + ").");
+  }
+  if (cold) {
+    const end = addH(cold, coldH);
+    ev.push([cold, "Loaf goes in the fridge (cold proof starts)", true]);
+    ev.push([addM(end, -45), "Preheat the oven and Dutch oven", false]);
+    ev.push([end, "Cold proof done. Score and bake", true]);
+    $("sColdH").dataset.end = end;
+  }
+  ev.sort((a, b) => a[0] - b[0]);
+  let prevDay = "";
+  $("timeline").innerHTML = ev.length ? ev.map(([d, text, key]) => {
+    const day = fmtDay(d), show = day !== prevDay; prevDay = day;
+    return `<div class="tl ${key ? "key" : ""}"><div class="t">${fmtTime(d)}<small>${show ? day : ""}</small></div><div class="w">${text}</div></div>`;
+  }).join("") : `<div class="note">Enter the time you feed your starter to see your timeline.</div>`;
+  $("schedWarn").innerHTML = warns.map(w => `<div class="badge bad">${w}</div>`).join("");
+}
+["sFed", "sMix", "sCold", "sPeak", "sFolds", "sGap", "sBulk", "sColdH"].forEach(id => {
+  $(id).addEventListener("input", () => {
+    if (id === "sMix" || id === "sCold") touched[id] = true;
+    state.inputs[id] = $(id).value; state.touched = touched; save();
+    calcAll(false);
+  });
+});
+$("sReset").onclick = () => { touched.sMix = touched.sCold = false; calcSched(); state.inputs.sMix = $("sMix").value; state.inputs.sCold = $("sCold").value; state.touched = touched; save(); };
+
+/* ---------- LEARN ---------- */
+
+/* ---------- init ---------- */
+function calcAll(rebuild){
+  if (rebuild) { fillFlavors(); renderRecipeFields(); }
+  calcBake(); calcSched(); calcHyd(); renderHyd();
+}
+["flavor", "loaves", "have"].forEach(id => { $(id).addEventListener("input", () => { state.inputs[id] = $(id).value; save(); calcBake(); }); $(id).addEventListener("change", () => { state.inputs[id] = $(id).value; save(); calcBake(); }); });
+$("minus").onclick = () => { $("loaves").value = Math.max(1, num($("loaves"), 1) - 1); $("loaves").dispatchEvent(new Event("input")); };
+$("plus").onclick = () => { $("loaves").value = num($("loaves"), 1) + 1; $("loaves").dispatchEvent(new Event("input")); };
+["hf", "hw"].forEach(id => $(id).addEventListener("input", calcHyd));
+
+fillFlavors();
+Object.assign(touched, state.touched || {});
+for (const [id, v] of Object.entries(state.inputs)) if ($(id) && v !== undefined) $(id).value = v;
+if (!$("sFed").value) {
+  const d = new Date(); d.setDate(d.getDate() + (d.getHours() >= 12 ? 1 : 0)); d.setHours(8, 0, 0, 0);
+  $("sFed").value = toLocal(d);
+}
+renderRecipeFields();
+calcAll(false);
 </script>
 </body>
 </html>
