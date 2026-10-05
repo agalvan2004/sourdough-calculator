@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#8a5a2b">
+<title>Sourdough Calculator</title>
+<style>
+  :root{--bg:#fbf5ea;--card:#fff;--ink:#3b2a1a;--accent:#8a5a2b;--soft:#f1e4cd;--ok:#2f7d4f;--warn:#b3541e}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:16px env(safe-area-inset-right) 40px env(safe-area-inset-left)}
+  .wrap{max-width:480px;margin:0 auto;padding:0 14px}
+  h1{font-size:24px;margin:8px 0 2px}
+  .sub{color:#7a6650;margin:0 0 16px;font-size:15px}
+  .card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(60,40,10,.10)}
+  label{display:block;font-weight:600;margin:12px 0 6px;font-size:16px}
+  label:first-child{margin-top:0}
+  .hint{font-weight:400;color:#8b7860;font-size:13px;display:block;margin-top:2px}
+  select,input[type=number]{width:100%;font-size:20px;padding:12px;border:2px solid var(--soft);border-radius:12px;background:#fffdf8;color:var(--ink)}
+  select:focus,input:focus{outline:none;border-color:var(--accent)}
+  .stepper{display:flex;gap:10px;align-items:center}
+  .stepper button{flex:0 0 56px;height:56px;font-size:28px;border:none;border-radius:12px;background:var(--accent);color:#fff}
+  .stepper input{text-align:center;font-weight:700;font-size:26px}
+  h2{font-size:18px;margin:0 0 10px;color:var(--accent)}
+  .row{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--soft);font-size:17px}
+  .row:last-child{border-bottom:none}
+  .row b{font-size:22px}
+  .badge{display:inline-block;padding:8px 12px;border-radius:10px;font-weight:700;margin-bottom:8px}
+  .good{background:#e3f4ea;color:var(--ok)}
+  .bad{background:#fbe9de;color:var(--warn)}
+  .note{font-size:14px;color:#7a6650;margin-top:8px;line-height:1.4}
+  details{margin-top:6px}
+  summary{font-size:15px;color:var(--accent);font-weight:600;padding:6px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sourdough Calculator</h1>
+  <p class="sub">Pick a flavor, enter how many loaves, and get your numbers.</p>
+
+  <div class="card">
+    <label for="flavor">Which flavor?</label>
+    <select id="flavor"></select>
+
+    <label>How many loaves?</label>
+    <div class="stepper">
+      <button type="button" id="minus" aria-label="fewer">&minus;</button>
+      <input type="number" id="loaves" inputmode="numeric" min="1" value="2">
+      <button type="button" id="plus" aria-label="more">+</button>
+    </div>
+
+    <label for="have">Starter you have right now (grams)
+      <span class="hint">Weigh your jar of active starter. Put 0 if you have none.</span></label>
+    <input type="number" id="have" inputmode="decimal" min="0" value="50">
+  </div>
+
+  <div class="card">
+    <h2>Your dough recipe</h2>
+    <div id="dough"></div>
+  </div>
+
+  <div class="card">
+    <h2>Your starter</h2>
+    <div id="starter"></div>
+  </div>
+
+  <div class="card">
+    <h2>Hydration (what's that?)</h2>
+    <div id="hyd"></div>
+    <details open>
+      <summary>What it means</summary>
+      <div class="note">Hydration is how much water is in your dough compared to the flour, as a percent. Flour always counts as 100%.<br><br>
+      <b>Formula:</b> water &divide; flour &times; 100<br>
+      Example: 350 g water &divide; 500 g flour = 0.70, so <b>70% hydration</b>.<br><br>
+      <b>Counting the starter:</b> starter is half flour and half water (a 100% starter). Add half of it to the flour and half to the water, then do the same math. It nudges the number up a little.<br><br>
+      <b>What the numbers feel like:</b><br>
+      55-65%: stiff, easy to handle<br>
+      68-72%: great for beginners<br>
+      75-80%: sticky, bigger holes, harder to shape<br>
+      More water = stickier dough and a more open crumb.</div>
+    </details>
+    <details>
+      <summary>Try your own numbers</summary>
+      <label for="hf">Flour (g)</label>
+      <input type="number" id="hf" inputmode="decimal" min="0" value="500">
+      <label for="hw">Water (g)</label>
+      <input type="number" id="hw" inputmode="decimal" min="0" value="350">
+      <div class="row"><span>Hydration</span><b id="hout">70%</b></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>Settings</summary>
+      <label for="peak">Hours for your starter to peak after a feed
+        <span class="hint">Usually 6 to 8 hours. Used for the timing estimate.</span></label>
+      <input type="number" id="peak" inputmode="decimal" min="1" value="7">
+    </details>
+  </div>
+</div>
+
+<script>
+// grams for ONE loaf
+const RECIPES = {
+  "Regular OG":            {Starter:100, Water:350, Flour:500, Salt:10},
+  "Jalapeno Cheddar":      {Starter:100, Water:350, Flour:500, Salt:10, Jalapeno:50, Cheddar:120},
+  "Rosemary Cheddar":      {Starter:100, Water:350, Flour:500, Salt:10, Cheddar:110, Rosemary:7},
+  "Just Chocolate Chip":   {Starter:100, Water:350, Flour:500, Salt:10, "Choc Chips":160}
+};
+const $ = id => document.getElementById(id);
+const sel = $("flavor");
+Object.keys(RECIPES).forEach(n => sel.add(new Option(n, n)));
+
+const r1 = n => Math.round(n);
+const num = (el, d) => { const v = parseFloat(el.value); return isFinite(v) && v >= 0 ? v : d; };
+
+function row(label, val, unit="g"){ return `<div class="row"><span>${label}</span><b>${val}${unit?" "+unit:""}</b></div>`; }
+
+function calc(){
+  const rec = RECIPES[sel.value];
+  const loaves = Math.max(1, Math.floor(num($("loaves"), 1)));
+  const have = num($("have"), 0);
+  const peak = num($("peak"), 7) || 7;
+
+  let html = "";
+  for (const [k, g] of Object.entries(rec)) {
+    const label = k === "Starter" ? "Starter (in the dough)" : k;
+    html += row(label, r1(g * loaves));
+  }
+  const per = Object.values(rec).reduce((a,b)=>a+b,0);
+  html += row("Each loaf weighs about", r1(per));
+  html += row("Total dough", r1(per * loaves));
+  $("dough").innerHTML = html;
+
+  const need = rec.Starter * loaves;
+  let s = "";
+  s += row("Starter needed", r1(need));
+  if (have >= need) {
+    s += `<div class="badge good">You have enough. No feeding needed.</div>`;
+    s += `<div class="note">You'll have about ${r1(have - need)} g left over to keep going.</div>`;
+  } else if (have <= 0) {
+    s += `<div class="badge bad">Enter how much starter you have.</div>`;
+  } else {
+    const feeds = Math.ceil(Math.log(need / have) / Math.log(3) - 1e-9);
+    const end = have * Math.pow(3, feeds);
+    s += `<div class="badge bad">You need more. Short by ${r1(need - have)} g.</div>`;
+    s += row("Feed right now: flour", r1(have));
+    s += row("Feed right now: water", r1(have));
+    s += row("Number of feeds", feeds, "");
+    s += row("Starter you'll end with", r1(end));
+    s += row("Time until ready", r1(feeds * peak), "hours");
+    s += `<div class="note">Each feed is equal parts starter, flour, and water (1:1:1), which triples it. After each feed peaks, weigh it and feed again with equal flour and water. Once you've done all the feeds, mix your dough.</div>`;
+  }
+  $("starter").innerHTML = s;
+
+  const flour = rec.Flour, water = rec.Water, st = rec.Starter;
+  const simple = water / flour * 100;
+  const withStarter = (water + st/2) / (flour + st/2) * 100;
+  $("hyd").innerHTML = row("This recipe's hydration", Math.round(simple*10)/10, "%")
+    + row("Counting the starter", Math.round(withStarter*10)/10, "%");
+  calcHyd();
+}
+
+function calcHyd(){
+  const f = parseFloat($("hf").value), w = parseFloat($("hw").value);
+  $("hout").textContent = (f > 0 && w >= 0) ? (Math.round(w / f * 1000)/10) + "%" : "-";
+}
+
+$("minus").onclick = () => { $("loaves").value = Math.max(1, num($("loaves"),1) - 1); calc(); };
+$("plus").onclick  = () => { $("loaves").value = num($("loaves"),1) + 1; calc(); };
+["flavor","loaves","have","peak"].forEach(id => { $(id).addEventListener("input", calc); $(id).addEventListener("change", calc); });
+["hf","hw"].forEach(id => $(id).addEventListener("input", calcHyd));
+calc();
+</script>
+</body>
+</html>
